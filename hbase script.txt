@@ -1,0 +1,35 @@
+===============================================================
+Create HBase Table called "Uber_DB" and load data from csv file
+===============================================================
+
+1. Start HBase Shell and create table called 'Uber_DB'
+------------------------------------------------------
+$ hbase shell
+hbase > create 'Uber_DB', 'id', 'key', 'driver_id', 'fare_amount', 'pickup_datetime', 'pickup_longitude', 'pickup_latitude', 'dropoff_longitude', 'dropoff_latitude', 'passenger_count', 'status'
+hbase> exit
+
+2. Remove header row from csv file
+----------------------------------
+Note: I couldn't find a way to ignore first row during import, so, manually removed from the csv file.
+
+3. Upload csv file to HDFS
+---------------------------
+Note: create directory on hdfs -> /user/hdfs/uberproject
+$ hdfs dfs -mkdir /user/hdfs/uberproject
+
+Note: downloaded csv file is in the folder ~/Downloads/Uber_Driver_Churn.csv
+$ hdfs dfs -put ~/Downloads/Uber_Driver_Churn.csv /user/hdfs/uberproject
+
+
+4. Import from text file
+------------------------
+$ hbase org.apache.hadoop.hbase.mapreduce.ImportTsv -Dimporttsv.separator="," -Dimporttsv.columns="HBASE_ROW_KEY,id, key, driver_id, fare_amount, pickup_datetime, pickup_longitude, pickup_latitude, dropoff_longitude, dropoff_latitude, passenger_count, status" Uber_DB /user/hdfs/uberproject/Uber_Driver_Churn.csv
+
+5. Check the table content from hbase shell
+--------------------------------------------
+$ hbase shell
+hbase> count 'Uber_DB'
+
+Result: 200000 row(s) in 7.2340 seconds
+
+

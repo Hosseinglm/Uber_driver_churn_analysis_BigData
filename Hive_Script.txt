@@ -1,0 +1,122 @@
+Create Database:
+
+hive> create database Uber_DB;
+OK
+Time taken: 0.226 seconds
+
+Create Table:
+Use Uber_DB;
+
+CREATE TABLE IF NOT EXISTS uberdriverchurn(id INT, key String,driver_id INT, fare_amount Double,pickup_datetime String, pickup_longitude Double, pickup_latitude Double, dropoff_longitude Double, dropoff_latitude Double, passenger_count INT, status String)
+              > row format delimited fields terminated by ','
+              > lines terminated by '\n'
+              > stored as textfile
+              > tblproperties("skip.header.line.count"="1");
+OK
+Time taken: 7.109 seconds
+
+hive (Uber_DB)> LOAD DATA LOCAL INPATH '/home/cloudera/Documents/Uber_Driver_Churn.csv' OVERWRITE INTO TABLE uberdriverchurn;
+
+Loading data to table uber_db.uberdriverchurn
+Table uber_b.uberdriverchurn stats: [numFiles=1, numRows=0, totalSize=16405783, rawDataSize=0]
+Ok
+Time taken: 4.816 seconds
+
+
+
+Data Processing:
+
+Data Analysis 1:
+
+hive(Uber_DB)>  SELECT driver_id, sum(fare_amount) as Total_Income From uberdriverchurn
+    > Group By driver_id
+    > Order By Total_Income DESC
+    > limit 10;
+
+MapReduce Jobs Launched: 
+Stage-Stage-1: Map: 1  Reduce: 1   Cumulative CPU: 29.55 sec   HDFS Read: 16413362 HDFS Write: 28384 SUCCESS
+Stage-Stage-2: Map: 1  Reduce: 1   Cumulative CPU: 21.68 sec   HDFS Read: 33263 HDFS Write: 207 SUCCESS
+Total MapReduce CPU Time Spent: 51 seconds 230 msec
+OK
+1226	3016.55
+1203	2942.1100000000006
+1132	2889.9300000000003
+1767	2851.1599999999985
+1628	2848.56
+1516	2831.7800000000007
+1969	2799.4000000000005
+1382	2798.0900000000006
+1441	2762.12
+1022	2742.5899999999997
+Time taken: 231.705 seconds, Fetched: 10 row(s)
+
+Data Analysis 2:
+
+Number of drivers that resigned:
+
+hive (uber_db)> SELECT COUNT(*) FROM uberdriverchurn
+              > WHERE status = 'resigned';
+
+MapReduce Jobs Launched: 
+Stage-Stage-1: Map: 1  Reduce: 1   Cumulative CPU: 29.45 sec   HDFS Read: 16414344 HDFS Write: 4 SUCCESS
+Total MapReduce CPU Time Spent: 29 seconds 450 msec
+OK
+108
+Time taken: 109.644 seconds, Fetched: 1 row(s)
+
+Data Analysis 3:
+How many drivers resigned which an income of less than 2350$:
+
+hive(Uber_DB)>  WITH tbl_Total_Income As(
+    > SELECT driver_id, sum(fare_amount) as Total_Income From uberdriverchurn
+    > Group By driver_id
+    > Order By Total_Income DESC)
+    > SELECT Distinct(U.driver_id),U.status, T.Total_Income From uberdriverchurn U JOIN tbl_Total_Income T
+    > ON U.driver_id = T.driver_id
+    > WHERE status ='resigned' and T.Total_Income < 2350
+    > Order By T.Total_Income DESC;
+
+Stage-Stage-1: Map: 1  Reduce: 1   Cumulative CPU: 43.71 sec   HDFS Read: 16413330 HDFS Write: 18980 SUCCESS
+Stage-Stage-2: Map: 1  Reduce: 1   Cumulative CPU: 22.77 sec   HDFS Read: 23018 HDFS Write: 18980 SUCCESS
+Stage-Stage-4: Map: 1  Reduce: 1   Cumulative CPU: 23.87 sec   HDFS Read: 29418 HDFS Write: 2558 SUCCESS
+Stage-Stage-5: Map: 1  Reduce: 1   Cumulative CPU: 21.78 sec   HDFS Read: 7676 HDFS Write: 1940 SUCCESS
+Total MapReduce CPU Time Spent: 1 minutes 52 seconds 130 msec
+1528	resigned	     2338.619999999999
+1201	resigned	     2337.7300000000005
+1256	resigned	     2327.62
+1144	resigned	     2327.1
+1811	resigned	     2326.7099999999996
+1409	resigned	     2324.7400000000002
+.
+.
+.
+OK
+Time taken: 523.345 seconds, Fetched: 66 row(s)
+
+
+
+Data Analysis 4:
+How many passengers could each driver carry in a month?
+
+hive(Uber_DB)> SELECT driver_id, SUM(passenger_count) AS Total_Passenger
+              > From uberdriverchurn
+              > Group By driver_id
+              > Order By Total_Passenger DESC
+              > limit 10;
+MapReduce Jobs Launched: 
+Stage-Stage-1: Map: 1  Reduce: 1   Cumulative CPU: 31.56 sec   HDFS Read: 16413351 HDFS Write: 23339 SUCCESS
+Stage-Stage-2: Map: 1  Reduce: 1   Cumulative CPU: 23.39 sec   HDFS Read: 28232 HDFS Write: 90 SUCCESS
+Total MapReduce CPU Time Spent: 54 seconds 950 msec
+OK
+Driver_id  Total_Passenger
+1657	548
+1516	442
+1763	430
+1226	429
+1733	422
+1614	420
+1625	419
+1840	417
+1822	417
+1985	416
+Time taken: 233.967 seconds, Fetched: 10 row(s)

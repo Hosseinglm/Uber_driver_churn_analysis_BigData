@@ -1,0 +1,45 @@
+Note: This dataset is considered a month of 1001 drivers in the US. 
+
+Data Storage: 
+
+Create Table:
+# load the the uber churn csv to Pig
+uberdriverchurn = load '/user/hdfs/uberproject/Uber_Driver_Churn.csv' using PigStorage(',') as (id: int, key: chararray, driver_id: int, fare_amount: float, pickup_datetime: chararray, pickup_longitude: chararray, pickup_latitude: chararray, dropoff_longitude: chararray, dropoff_latitude: chararray, passenger_count: int, status: chararray);
+Data Analysis: 
+
+Data Analysis 1:
+uberdriverchurn_grouped = GROUP uberdriverchurn BY driver_id;
+uberdriverchurn_total_income = FOREACH uberdriverchurn_grouped GENERATE group as driver_id, SUM(uberdriverchurn.fare_amount) as Total_Income;
+uberdriverchurn_total_income_sorted = ORDER uberdriverchurn_total_income BY Total_Income DESC;
+uberdriverchurn_top_10 = LIMIT uberdriverchurn_total_income_sorted 10;
+DUMP uberdriverchurn_top_10;
+
+Data Analysis 2:
+Number of drivers that resigned: 
+resigned_drivers = FILTER uberdriverchurn BY status == 'resigned';
+resigned_drivers_count = FOREACH (GROUP resigned_drivers ALL) GENERATE COUNT(resigned_drivers);
+DUMP resigned_drivers_count;
+ 
+Data Analysis 3:
+How many drivers resigned which an income of less than 2350$: 
+uberdriverchurn_grouped = GROUP uberdriverchurn BY driver_id;
+tbl_Total_Income = FOREACH uberdriverchurn_grouped GENERATE group as driver_id, SUM(uberdriverchurn.fare_amount) as Total_Income;
+tbl_Total_Income_sorted = ORDER tbl_Total_Income BY Total_Income DESC;
+resigned_drivers = FILTER uberdriverchurn BY status == 'resigned';
+resigned_drivers_with_income = JOIN resigned_drivers BY driver_id, tbl_Total_Income_sorted BY driver_id;
+resigned_drivers_with_income_filtered = FILTER resigned_drivers_with_income BY (resigned_drivers::Total_Income < 2350);
+resigned_drivers_with_income_filtered_sorted = ORDER resigned_drivers_with_income_filtered BY tbl_Total_Income_sorted::Total_Income DESC;
+resigned_drivers_with_income_filtered_sorted_distinct = DISTINCT resigned_drivers_with_income_filtered_sorted;
+Dump resigned_drivers_with_income_filtered_sorted_distinct;
+
+Data Analysis 4
+How many passengers could each driver carry in a month? 
+
+uberdriverchurn_grouped = GROUP uberdriverchurn BY driver_id;
+uberdriverchurn_total_passenger = FOREACH uberdriverchurn_grouped GENERATE group as driver_id, SUM(uberdriverchurn.passenger_count) as Total_Passenger;
+uberdriverchurn_total_passenger_sorted = ORDER uberdriverchurn_total_passenger BY Total_Passenger DESC;
+uberdriverchurn_top_10 = LIMIT uberdriverchurn_total_passenger_sorted 10;
+DUMP uberdriverchurn_top_10;
+
+
+

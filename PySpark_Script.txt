@@ -1,0 +1,47 @@
+
+#load the uberchurn.csv to Spark
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.appName("Uber Driver Churn").getOrCreate()
+uberdriverchurn = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load("/user/hdfs/Uber_Driver_Churn.csv")
+
+Data Analysis
+
+Data Analysis 1
+
+from pyspark.sql.functions import col,sum
+uberdriverchurn_grouped = uberdriverchurn.groupBy("driver_id")
+uberdriverchurn_total_income = uberdriverchurn_grouped.agg(sum("fare_amount").alias("Total_Income"))
+uberdriverchurn_total_income_sorted = uberdriverchurn_total_income.orderBy(col("Total_Income").desc())
+uberdriverchurn_top_10 = uberdriverchurn_total_income_sorted.limit(10)
+uberdriverchurn_top_10.show()
+
+Data Analysis 2
+
+from pyspark.sql.functions import count
+resigned_drivers = uberdriverchurn.filter(uberdriverchurn["status"] == 'resigned')
+resigned_drivers_count = resigned_drivers.agg(count("*"))
+resigned_drivers_count.show()
+
+ 
+Data Analysis 3
+
+from pyspark.sql.functions import sum
+uberdriverchurn_grouped = uberdriverchurn.groupBy("driver_id")
+tbl_Total_Income = uberdriverchurn_grouped.agg(sum("fare_amount").alias("Total_Income"))
+tbl_Total_Income_sorted = tbl_Total_Income.orderBy(col("Total_Income").desc())
+resigned_drivers = uberdriverchurn.filter(uberdriverchurn["status"] == 'resigned')
+resigned_drivers_with_income = resigned_drivers.join(tbl_Total_Income_sorted, "driver_id")
+resigned_drivers_with_income_filtered = resigned_drivers_with_income.filter(col("Total_Income") < 2350)
+resigned_drivers_with_income_filtered_sorted = resigned_drivers_with_income_filtered.orderBy(col("Total_Income").desc())
+resigned_drivers_with_income_filtered_sorted_distinct = resigned_drivers_with_income_filtered_sorted.dropDuplicates()
+resigned_drivers_with_income_filtered_sorted_distinct.show()
+
+
+Data Analysis 4
+
+from pyspark.sql.functions import sum, desc
+grouped_df = uberdriverchurn.groupBy("driver_id")
+total_passenger_df = grouped_df.agg(sum("passenger_count").alias("Total_Passenger"))
+sorted_df = total_passenger_df.sort(desc("Total_Passenger"))
+top_10_df = sorted_df.limit(10)
+top_10_df.show()

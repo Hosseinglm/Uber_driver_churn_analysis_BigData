@@ -1,0 +1,53 @@
+SELECT * FROM Uber_Drivers_Churn_1.[Uber Drivers Churn]
+
+
+
+
+
+SELECT
+  driver_id, SUM(fare_amount) AS Total_Income
+FROM Uber_Driver_Churn.Uber
+Group By driver_id
+
+
+WITH tbl_Total_Income AS
+(
+  SELECT driver_id, SUM(fare_amount) AS Total_Income
+  FROM Uber_Driver_Churn.Uber
+  GROUP BY driver_id
+  Order By Total_Income DESC
+  
+)
+SELECT
+    status, Total_Income
+FROM Uber_Driver_Churn.Uber U INNER JOIN tbl_Total_Income T
+ON U.driver_id = T.driver_id
+WHERE status ='resigned' and T.Total_Income < 2350
+Order By T.Total_Income DESC
+
+SELECT driver_id, sum(passenger_count) AS TotalPassenger
+FROM Uber_Driver_Churn.Uber
+GROUP BY driver_id
+ORDER BY TotalPassenger
+
+
+SELECT count(distinct(driver_id)) FROM Uber_Driver_Churn.Uber;
+
+
+
+
+
+
+
+DECLARE distance FLOAT64;
+CREATE TEMP FUNCTION RADIANS(x FLOAT64) AS (
+  ACOS(-1) * x / 180
+)
+SELECT pickup_longitude, pickup_latitude, dropoff_longitude, dropoff_latitude,
+       distance = 6371 * ACOS(COS(RA (pickup_latitude)) * COS(RADIANS(dropoff_latitude)) * COS(RADIANS(dropoff_longitude) - RADIANS(pickup_longitude)) + SIN(RADIANS(pickup_latitude)) * SIN(RADIANS(dropoff_latitude))) as distance
+FROM Uber_Driver_Churn.Uber
+
+
+
+
+
