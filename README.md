@@ -34,4 +34,4 @@ A few selected Hadoop big data tools will be used on top of Hadoop File System (
 
 ## Data Analytics Pipeline
 
-![alt text](https://github.com/[Hosseinglm]/[Uber_driver_churn_analysis_BigData]/[main]/Pipeline.png?raw=true)
+![alt text](https://github.com/Hosseinglm/Uber_driver_churn_analysis_BigData/blob/main/Pipeline.png)
